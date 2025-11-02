@@ -1,0 +1,11 @@
+# Ignore Python virtual environments
+Backend/.venv/
+
+# Ignore node modules
+frontend/node_modules/
+
+# Ignore build outputs
+frontend/dist/
+
+# macOS system files
+.DS_Store
