@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 
@@ -6,6 +6,10 @@ import requests
 from readability import Document
 from bs4 import BeautifulSoup
 import re
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.corpus import stopwords
+import string
 
 # Create the API app object
 app = FastAPI(title="Topic Cloud API", version="0.1.0")
@@ -73,15 +77,38 @@ def fetch_and_extract_text(url: str) -> str:
 
     return text
 
-@app.post("/analyze", response_model=AnalyzePreview)
+
+class KeywordItem(BaseModel):
+    word: str
+    weight: float
+
+class AnalyzeResponse(BaseModel):
+    keywords: list[KeywordItem]
+
+@app.post("/analyze", response_model=AnalyzeResponse)
 def analyze(req: AnalyzeRequest):
     """
-    Temporary version for Step 2:
-    Return a short preview to confirm extraction works.
-    Next step will return keywords and weights.
+    Extract top keywords from the article text using TF-IDF.
     """
     text = fetch_and_extract_text(str(req.url))
-    return AnalyzePreview(
-        chars=len(text),
-        preview=text[:400]  # first 400 characters, just to verify
+
+    # 1) Basic text cleaning
+    text = text.lower()
+    text = text.translate(str.maketrans("", "", string.punctuation))
+
+    # 2) Prepare TF-IDF
+    stop_words = list(stopwords.words("english"))
+    vectorizer = TfidfVectorizer(stop_words=stop_words, max_features=40)
+    tfidf_matrix = vectorizer.fit_transform([text])
+
+    # 3) Collect words and weights
+    feature_names = vectorizer.get_feature_names_out()
+    weights = tfidf_matrix.toarray()[0]
+    keywords = sorted(
+        [{"word": w, "weight": float(weights[i])} for i, w in enumerate(feature_names)],
+        key=lambda x: x["weight"],
+        reverse=True,
     )
+
+    # 4) Return top N keywords
+    return AnalyzeResponse(keywords=keywords[:30])
