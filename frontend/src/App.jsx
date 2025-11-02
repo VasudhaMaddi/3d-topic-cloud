@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import WordCloud3D from "./components/WordCloud3D";
 
 function SpinningBox() {
   const ref = useRef();
@@ -72,10 +73,17 @@ export default function App() {
       </header>
 
       <div style={{ position: "relative" }}>
-        <Canvas camera={{ position: [0, 0, 5], fov: 60 }}>
+        <Canvas camera={{ position: [0, 0, 9], fov: 60 }}>
           <ambientLight intensity={0.9} />
           <directionalLight position={[3, 5, 2]} intensity={0.7} />
-          <SpinningBox />
+          <ambientLight intensity={0.9} />
+          <directionalLight position={[3, 5, 2]} intensity={0.7} />
+
+          {keywords.length > 0 ? (
+            <WordCloud3D keywords={keywords} />
+          ) : (
+            <SpinningBox />
+          )}
           <OrbitControls enablePan enableZoom />
         </Canvas>
         <div style={{ position: "absolute", right: 12, top: 60, maxHeight: "70vh", overflow: "auto", background: "rgba(255,255,255,0.9)", padding: 12, borderRadius: 8, fontSize: 14 }}>
